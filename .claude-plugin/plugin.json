@@ -1,0 +1,9 @@
+{
+  "name": "buzz-engine",
+  "version": "0.1.0",
+  "description": "Find relevant Product Hunt, Hacker News and Reddit discussions and send research notes or copy guidance to Slack. Follow platform rules and write original content; HN output is research only.",
+  "author": {
+    "name": "Workloom Solutions Private Limited"
+  },
+  "license": "MIT"
+}

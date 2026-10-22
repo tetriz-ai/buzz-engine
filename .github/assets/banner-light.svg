@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="200" viewBox="0 0 880 200" role="img" aria-label="buzz-engine: finds relevant discussions and sends research notes or copy guidance to Slack">
+  <rect width="880" height="200" rx="14" fill="#f6f8fa"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="40" y="84" font-size="40" font-weight="700" fill="#14161a">buzz-engine</text>
+    <text x="40" y="120" font-size="17" fill="#57606a">Finds Product Hunt, Hacker News and Reddit threads</text>
+    <text x="40" y="144" font-size="17" fill="#57606a">Research notes and copy guidance, sent to Slack.</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700">
+    <rect x="560" y="38" width="64" height="30" rx="7" fill="#e6e9ed"/><text x="592" y="58" text-anchor="middle" fill="#14161a">PH</text>
+    <rect x="560" y="85" width="64" height="30" rx="7" fill="#e6e9ed"/><text x="592" y="105" text-anchor="middle" fill="#14161a">HN</text>
+    <rect x="560" y="132" width="64" height="30" rx="7" fill="#e6e9ed"/><text x="592" y="152" text-anchor="middle" fill="#14161a">r/</text>
+  </g>
+  <g fill="none" stroke="#8c959f" stroke-width="2" stroke-linecap="round">
+    <path d="M628 53 C660 53 660 100 690 100"/>
+    <path d="M628 100 L690 100"/>
+    <path d="M628 147 C660 147 660 100 690 100"/>
+  </g>
+  <path d="M686 94 L696 100 L686 106 Z" fill="#8c959f"/>
+  <rect x="702" y="46" width="146" height="108" rx="10" fill="#ffffff" stroke="#8c959f" stroke-width="1.5"/>
+  <circle cx="722" cy="68" r="7" fill="#bf5b04"/>
+  <rect x="736" y="63" width="70" height="9" rx="4.5" fill="#57606a" opacity="0.55"/>
+  <rect x="718" y="88" width="114" height="7" rx="3.5" fill="#57606a" opacity="0.35"/>
+  <rect x="718" y="102" width="100" height="7" rx="3.5" fill="#57606a" opacity="0.35"/>
+  <rect x="718" y="116" width="84" height="7" rx="3.5" fill="#57606a" opacity="0.35"/>
+  <text x="718" y="143" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#bf5b04">GUIDANCE · verify</text>
+</svg>

@@ -1,0 +1,15 @@
+{
+  "name": "buzz-engine",
+  "owner": {
+    "name": "Workloom Solutions Private Limited"
+  },
+  "plugins": [
+    {
+      "name": "buzz-engine",
+      "source": "./",
+      "description": "Daily community engagement digest for PH, HN and Reddit.",
+      "version": "0.1.0"
+    }
+  ],
+  "description": "buzz-engine: a daily PH/HN/Reddit engagement digest for Claude Code"
+}

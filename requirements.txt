@@ -1,0 +1,4 @@
+# Optional YAML configuration support; Python 3.9 compatible.
+PyYAML==6.0.3
+# Optional PDF rendering; install Chromium separately with playwright install.
+playwright==1.60.0

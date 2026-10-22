@@ -1,0 +1,167 @@
+# buzz-engine config. Lives at <your repo>/buzz/config.yaml.
+# /buzz-init writes this for you. Every FILL_IN_* must be replaced before a real run.
+# Why each default is what it is: see docs/config-notes.md in the plugin.
+
+# ---------------------------------------------------------------------------
+# Who you are. Drives the judging step and THE ONE HARD RULE.
+# ---------------------------------------------------------------------------
+product:
+  name: FILL_IN_PRODUCT             # e.g. Acme
+  # Never named in any draft. Include old names and the company name.
+  never_mention: [FILL_IN_PRODUCT]
+  # Never linked in any draft.
+  own_domains: [FILL_IN_DOMAIN]     # e.g. acme.dev
+  # What "our space" means. The Judge scores relevance 0-10 against these.
+  relevance_pillars:
+    - FILL_IN_PILLAR_1              # e.g. developer productivity
+    - FILL_IN_PILLAR_2              # e.g. AI coding tools
+
+# ---------------------------------------------------------------------------
+# Where the digest goes. Needs SLACK_BOT_TOKEN in buzz/.env or the environment
+# (scopes: files:write, chat:write; invite the bot to the channel).
+# ---------------------------------------------------------------------------
+slack:
+  channel_id: FILL_IN_CHANNEL_ID    # C0..., from the channel's "About" panel
+  channel_name: FILL_IN_CHANNEL_NAME
+
+# ---------------------------------------------------------------------------
+# When /buzz-daily runs and what it runs. Use the isolated GitHub Actions
+# workflow for unattended runs; record its time here.
+# ---------------------------------------------------------------------------
+schedule:
+  timezone: UTC                     # IANA name, e.g. Asia/Kolkata, America/New_York
+  fire_time_label: "right after the PH board resets"   # printed on the PH checklist
+  weekdays_only: true               # skip Sat/Sun
+  lanes: [ph, hn, reddit]           # order matters: PH first, it is the time-sensitive one
+  monday_lookback_hours: 72         # covers the weekend when weekdays_only is on
+
+# ---------------------------------------------------------------------------
+# The seen-log (state_dir/seen.json) stops a thread resurfacing tomorrow.
+# Use none: source-reading commands only update local state, never GitHub.
+# Actions persists delivered IDs in a separate non-model job and opens a PR.
+# Legacy pr/push values do not authorize writes and should be migrated to none.
+# branch_prefix is retained for compatibility; the trusted writer chooses its branch.
+# ---------------------------------------------------------------------------
+state:
+  commit: none
+  branch_prefix: buzz/state-
+
+lookback_hours: 48
+output_dir: buzz/working            # per-run scratch; gitignore it
+state_dir: buzz/state               # seen.json lives here
+
+hn:
+  tags: [story, show_hn, ask_hn]
+  min_points: 5
+  vote_candidate_min_points: 60
+  comment_candidates:
+    enabled: true
+    max_per_digest: 3
+    max_comments: 60
+    ideal_age_hours: 4
+    max_age_hours: 24
+    min_reply_window_score: 4
+    # Legacy compatibility key; no karma routing or permission to post is inferred.
+    bypass_graduation_gate: true
+
+reddit:
+  # Identify your application and operator honestly; Reddit scans require this.
+  user_agent: FILL_IN_REDDIT_USER_AGENT
+  new_limit: 100
+  hot_limit: 25
+  min_score: 3
+  fetch:
+    attempts: 3
+    backoff_base_s: 4
+    max_backoff_s: 60
+    respect_retry_after: true
+    max_total_wait_s: 300  # stop if the cumulative retry/deferred wait budget is exhausted
+    max_retry_after_s: 120
+    pace_s: 1.2
+    pace_jitter_s: 0.6
+    throttle_streak_limit: 4
+    deferred_sweep: true
+    deferred_sweep_wait_s: 45
+  comment_candidates:
+    enabled: true
+    max_per_digest: 3
+    ideal_age_hours: 6
+    max_age_hours: 36
+    min_reply_window_score: 6
+    # Legacy compatibility key; always check actual community participation rules.
+    ungraduated_barrier_ceiling: low
+
+# Read-only share-of-voice report (/buzz --mode brands). Never drafts.
+# Precision over recall: use disambiguated aliases for generic names.
+brand_monitor:
+  window_days: 7
+  our_brand: ours
+  brands:
+    ours: [FILL_IN_PRODUCT]
+    # competitor_a: [competitor-a, "competitor a.io"]
+
+ph:
+  token_env: PH_API_TOKEN           # developer token: producthunt.com/v2/oauth/applications
+  window: ph_day                    # today's board only; `lookback` = rolling lookback_hours
+  lookback_hours: 48
+  thin_day_floor: 5
+  posts_per_page: 20
+  max_pages: 4
+  min_votes: 0
+  require_fit: true
+  fit_topics: [artificial-intelligence, developer-tools, github, software-engineering, open-source, saas]
+  detail_fetch_top: 25
+  comments_limit: 20
+  relevance_threshold: 6
+  max_cards_per_digest: 5
+  topics: [artificial-intelligence, developer-tools, github, software-engineering]
+  # Plain substring match over name + tagline + description + topics.
+  keywords: [ai agent, coding agent, agentic, mcp, ai coding, code review, developer productivity, llm, devtools]
+  # Legacy key retained for compatibility; these cap digest review volume only.
+  warmup:
+    rate_limit:
+      max_comments_per_day: 3
+      max_connect_requests_per_day: 3
+      min_hours_between_actions: 6
+
+# Example subs for a dev-tools product. barrier = how harshly the sub treats
+# participation restrictions. A recommendation never overrides community rules.
+subreddits:
+  - {name: ChatGPTCoding,       tier: 1, barrier: low}
+  - {name: ClaudeAI,            tier: 1, barrier: low}
+  - {name: cursor,              tier: 1, barrier: low}
+  - {name: ExperiencedDevs,     tier: 1, barrier: high}
+  - {name: devops,              tier: 2, barrier: medium}
+  - {name: programming,         tier: 2, barrier: medium}
+
+keywords:
+  precise: ["FILL_IN_PRECISE_TOPIC"]
+  broad: ["FILL_IN_BROAD_TOPIC"]
+  watch: []                         # collide with off-topic meanings; Judge must confirm
+  persona_pain: ["FILL_IN_AUDIENCE_QUESTION"]
+
+# Legacy compatibility metadata. No account warming, karma targets, or bypasses.
+# Rate values are upper caps for digest review volume, never activity quotas.
+warmup:
+  graduation:
+    min_account_age_days: 10
+    min_comment_karma: 50
+  rate_limit:
+    max_comments_per_day: 3
+    max_per_subreddit_per_day: 1
+    min_hours_between_comments: 6
+  comment_barrier_ceiling: medium
+
+# Optional account context; age and karma do not confer permission to participate.
+accounts:
+  reddit:
+    - {handle: FILL_IN_REDDIT_HANDLE, lane: A, created_on: 2026-01-01, comment_karma: 0, status: active}
+  hn:
+    - {handle: FILL_IN_HN_HANDLE, lane: A, created_on: 2026-01-01, karma: 0, status: active}
+  ph:
+    - {handle: FILL_IN_PH_HANDLE, lane: PH, created_on: 2026-01-01, status: active}
+
+# Optional: replace a lane's cover checklist.
+# digest:
+#   checklists:
+#     hn: {title: "Daily HN checklist", time: "10 min", daily: ["..."], weekly: ["..."], rule: "..."}

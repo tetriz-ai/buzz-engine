@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m unittest:*)",
+      "Bash(claude plugin validate:*)",
+      "Bash(python3 scripts/vendor.py:*)"
+    ]
+  }
+}

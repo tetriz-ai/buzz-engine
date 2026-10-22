@@ -1,0 +1,38 @@
+{
+  "kind": "community",
+  "accent": "#bb603c",
+  "brand": "BUZZ ENGINE",
+  "titles": [
+    "Find conversations worth joining.",
+    "Arrive with something useful.",
+    "Daily digests. Ready in Slack.",
+    "Read. Verify. Write your own."
+  ],
+  "sources": [
+    "HN",
+    "Reddit",
+    "PH"
+  ],
+  "threads": [
+    "CI retries",
+    "Flaky tests",
+    "Developer tools"
+  ],
+  "reply": "Have you tried tracking retries separately from real failures?",
+  "footers": [
+    "Illustrative workflow \u00b7 fictional threads \u00b7 no live scan",
+    "Fictional reply example \u00b7 grounded drafting requires the source thread",
+    "Illustrated Slack delivery \u00b7 each platform gets its own PDF \u00b7 nothing sent",
+    "HN: research only. Follow platform rules; write your own content."
+  ],
+  "evidence": [
+    {
+      "path": "README.md",
+      "contains": "Buzz recommends copy as guidance."
+    },
+    {
+      "path": "commands/buzz.md",
+      "contains": "--dry-run"
+    }
+  ]
+}

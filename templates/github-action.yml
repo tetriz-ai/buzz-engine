@@ -1,0 +1,165 @@
+# Copy into .github/workflows/buzz-daily.yml in the repo holding buzz/config.yaml.
+# This workflow fixes state_dir to buzz/state and state.commit to none during the
+# LLM run. Fresh runners deliver only PDF data and save only seen.json, without an LLM.
+# Secrets: ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN, SLACK_BOT_TOKEN,
+# optional PH_API_TOKEN.
+# BUZZ_ENGINE_TOKEN is optional read-only access for a restricted plugin checkout.
+# Tool permissions reduce accidental reach; they are not an OS security sandbox.
+name: buzz-daily
+env:
+  BUZZ_ENGINE_REPO: tetriz-ai/buzz-engine
+  BUZZ_ENGINE_REF: main  # Replace with a reviewed commit SHA for an immutable installation.
+on:
+  schedule:
+    - cron: "5 8 * * 1-5"
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency: buzz-daily
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 45
+    outputs:
+      has_state: ${{ steps.artifacts.outputs.has_state }}
+      has_digests: ${{ steps.artifacts.outputs.has_digests }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install buzz-engine plugin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.BUZZ_ENGINE_REPO }}
+          ref: ${{ env.BUZZ_ENGINE_REF }}
+          token: ${{ secrets.BUZZ_ENGINE_TOKEN || github.token }}
+          path: .buzz-engine
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: "22.23.4" }
+      - name: Install tools
+        run: |
+          pip install -r .buzz-engine/requirements.txt
+          python -m playwright install --with-deps chromium
+          npm install -g @anthropic-ai/claude-code@2.1.308
+      - name: Configure local state only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import yaml
+          path = Path('buzz/config.yaml')
+          config = yaml.safe_load(path.read_text())
+          config.setdefault('state', {})['commit'] = 'none'
+          config['state_dir'] = 'buzz/state'
+          config['output_dir'] = 'buzz/working'
+          path.write_text(yaml.safe_dump(config, sort_keys=False))
+          PY
+      - name: Run /buzz-daily
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          PH_API_TOKEN: ${{ secrets.PH_API_TOKEN }}
+        run: |
+          claude -p "Run /buzz-daily --no-post. State commit is none; do not run git, gh, or the Slack uploader." \
+            --plugin-dir "$PWD/.buzz-engine" \
+            --tools "Bash,Read,Write,Edit,Glob,Grep,Agent" \
+            --allowedTools "Read(buzz/config.yaml),Read(buzz/voice.md),Read(buzz/learnings/**),Read(buzz/working/**),Read(.buzz-engine/**),Glob(buzz/working/**),Glob(buzz/learnings/**),Grep(buzz/working/**),Grep(buzz/learnings/**),Grep(.buzz-engine/**),Agent,Write(buzz/working/**),Edit(buzz/working/**),Write(buzz/learnings/**),Edit(buzz/learnings/**),Bash(python3 $PWD/.buzz-engine/scripts/buzz-scan.py:*),Bash(python3 $PWD/.buzz-engine/scripts/buzz-ph-scan.py:*),Bash(python3 $PWD/.buzz-engine/scripts/buzz-digest-pdf.py:*)"
+      - name: Check local output availability
+        id: artifacts
+        run: |
+          python3 - <<'PYCODE'
+          import os
+          from pathlib import Path
+          state = Path('buzz/state/seen.json').is_file()
+          digests = any(Path('buzz/working').glob('*-digest-??-??-????.pdf'))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('has_state=%s\n' % str(state).lower())
+              output.write('has_digests=%s\n' % str(digests).lower())
+          if not digests:
+              print('No digest PDFs produced; delivery skipped')
+          if not state:
+              print('No seen-log produced; state save skipped')
+          PYCODE
+      - name: Pass state data to isolated writer
+        if: steps.artifacts.outputs.has_state == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: buzz-state
+          path: buzz/state/seen.json
+          if-no-files-found: error
+          retention-days: 1
+      - name: Pass PDF data to isolated delivery
+        if: steps.artifacts.outputs.has_digests == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: buzz-digests
+          path: buzz/working/*-digest-??-??-????.pdf
+          if-no-files-found: error
+          retention-days: 1
+  deliver:
+    needs: scan
+    if: needs.scan.outputs.has_digests == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.BUZZ_ENGINE_REPO }}
+          ref: ${{ env.BUZZ_ENGINE_REF }}
+          token: ${{ secrets.BUZZ_ENGINE_TOKEN || github.token }}
+          path: .buzz-engine
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with: { python-version: "3.12" }
+      - run: pip install -r .buzz-engine/requirements.txt
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: buzz-digests
+          path: buzz/working
+      - name: Deliver PDF data without an LLM
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        run: python3 .buzz-engine/scripts/deliver-digests.py
+  save-state:
+    needs: [scan, deliver]
+    if: always() && needs.scan.result == 'success' && needs.scan.outputs.has_state == 'true' && needs.deliver.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.BUZZ_ENGINE_REPO }}
+          ref: ${{ env.BUZZ_ENGINE_REF }}
+          token: ${{ secrets.BUZZ_ENGINE_TOKEN || github.token }}
+          path: .buzz-engine
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: buzz-state
+          path: buzz/state
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with: { python-version: "3.12" }
+      - run: pip install -r .buzz-engine/requirements.txt
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: buzz-digests
+          path: buzz/working
+      - name: Retain only delivered lanes in new seen state
+        run: python3 .buzz-engine/scripts/retain-delivered-state.py
+      - name: Save state without an LLM
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .buzz-engine/scripts/save-state.sh
